@@ -11,19 +11,21 @@ const router = Router();
 
 const qrGenerateSchema = z.object({
   body: z.object({
-    restaurant_id: z.string().uuid(),
-    table_number: z.string().min(1),
+    restaurant_id: z.string().uuid().optional(),
+    table_number: z.union([z.string().min(1), z.number()]).transform(String),
   }),
 });
 
 router.post('/generate', authenticate, validate(qrGenerateSchema), async (req, res) => {
   try {
     const { restaurant_id, table_number } = req.body;
+    // @ts-ignore
+    const targetRestaurantId = restaurant_id || req.admin.restaurant_id;
     
     // Create the DB record first to get the UUID for the table
     const tableId = crypto.randomUUID();
     const qrPayload = {
-      restaurant_id,
+      restaurant_id: targetRestaurantId,
       table_id: tableId,
     };
 
@@ -37,7 +39,7 @@ router.post('/generate', authenticate, validate(qrGenerateSchema), async (req, r
     const tableQR = await prisma.tableQR.create({
       data: {
         id: tableId,
-        restaurant_id,
+        restaurant_id: targetRestaurantId,
         table_number,
         qr_payload: JSON.stringify(qrPayload),
         qr_image_url: uploadRes.secure_url,

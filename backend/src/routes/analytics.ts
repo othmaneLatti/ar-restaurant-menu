@@ -54,16 +54,30 @@ router.get('/:restaurant_id', authenticate, async (req, res) => {
       take: 5,
     });
     
-    // Convert BigInt to string before returning if using raw query
-    // But since Prisma uses Number for count when using aggregate/groupBy, it's fine.
-    const eventsByDay: any[] = await prisma.$queryRaw`
-      SELECT DATE(created_at) as date, COUNT(*)::int as count
-      FROM "AnalyticsEvent"
-      WHERE restaurant_id = ${restaurant_id}::uuid AND event_type = 'QR_SCAN'
-      GROUP BY DATE(created_at)
-      ORDER BY DATE(created_at) ASC
-      LIMIT 7
-    `;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentScans = await prisma.analyticsEvent.findMany({
+      where: {
+        restaurant_id,
+        event_type: 'QR_SCAN',
+        created_at: { gte: sevenDaysAgo },
+      },
+      select: { created_at: true },
+      orderBy: { created_at: 'asc' },
+    });
+
+    const scansByDayMap: Record<string, number> = {};
+    recentScans.forEach(scan => {
+      // Create YYYY-MM-DD string
+      const dateStr = scan.created_at.toISOString().split('T')[0];
+      scansByDayMap[dateStr] = (scansByDayMap[dateStr] || 0) + 1;
+    });
+
+    const eventsByDay = Object.keys(scansByDayMap).map(date => ({
+      date,
+      count: scansByDayMap[date],
+    }));
 
     res.json({
       scan_count: scanCount,
