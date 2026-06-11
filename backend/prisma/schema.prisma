@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id              String            @id @default(uuid())
+  name            String
+  address         String
+  logo_url        String
+  created_at      DateTime          @default(now())
+  
+  categories      MenuCategory[]
+  tables          TableQR[]
+  admins          AdminUser[]
+  analyticsEvents AnalyticsEvent[]
+}
+
+model MenuCategory {
+  id              String            @id @default(uuid())
+  restaurant_id   String
+  name            String
+  display_order   Int
+  created_at      DateTime          @default(now())
+
+  restaurant      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  items           MenuItem[]
+  analyticsEvents AnalyticsEvent[]
+}
+
+model MenuItem {
+  id              String            @id @default(uuid())
+  category_id     String
+  name            String
+  description     String
+  price           Float
+  calories        Int?
+  ingredients     String
+  allergens       String
+  thumbnail_url   String
+  model_url       String?
+  is_available    Boolean           @default(true)
+  created_at      DateTime          @default(now())
+
+  category        MenuCategory      @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  analyticsEvents AnalyticsEvent[]
+}
+
+model TableQR {
+  id              String            @id @default(uuid())
+  restaurant_id   String
+  table_number    Int
+  qr_payload      String
+  qr_image_url    String
+  created_at      DateTime          @default(now())
+
+  restaurant      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  analyticsEvents AnalyticsEvent[]
+}
+
+model AdminUser {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  password_hash   String
+  restaurant_id   String
+  created_at      DateTime          @default(now())
+
+  restaurant      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id              String            @id @default(uuid())
+  restaurant_id   String
+  table_id        String?
+  event_type      String
+  item_id         String?
+  category_id     String?
+  session_id      String
+  duration_ms     Int?
+  created_at      DateTime          @default(now())
+
+  restaurant      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  table           TableQR?          @relation(fields: [table_id], references: [id], onDelete: SetNull)
+  item            MenuItem?         @relation(fields: [item_id], references: [id], onDelete: SetNull)
+  category        MenuCategory?     @relation(fields: [category_id], references: [id], onDelete: SetNull)
+}

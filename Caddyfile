@@ -1,0 +1,9 @@
+# Caddyfile for AR Restaurant Menu
+
+{$ADMIN_DOMAIN} {
+    reverse_proxy admin-dashboard:80
+}
+
+{$API_DOMAIN} {
+    reverse_proxy backend:3000
+}

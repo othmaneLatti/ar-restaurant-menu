@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #FF6B35;
+  --color-secondary: #1A1A2E;
+  --color-accent: #F7C59F;
+  --color-background: #0F0F1A;
+  --color-surface: #1E1E30;
+  --color-border: #2E2E45;
+  --color-error: #FF4D6D;
+  --color-success: #4CAF88;
+  --color-text-primary: #F5F5F0;
+  --color-text-muted: #9090A0;
+  --color-ar-panel: rgba(15,15,26,0.82);
+
+  --font-sora: "Sora", sans-serif;
+  --font-inter: "Inter", sans-serif;
+
+  --radius-10: 10px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.35);
+  --shadow-panel: 0 8px 40px rgba(0,0,0,0.55);
+  --shadow-button-active: 0 0 0 3px rgba(255,107,53,0.35);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text-primary font-inter antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sora;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 font-semibold rounded-12 transition-all duration-150 hover:brightness-110 hover:shadow-[0_0_15px_rgba(255,107,53,0.4)] active:shadow-button-active disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply bg-transparent border border-primary text-primary px-6 py-3 font-semibold rounded-12 transition-all duration-150 hover:bg-primary/10 active:shadow-button-active;
+  }
+  .input-field {
+    @apply bg-surface border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary rounded-10 px-4 py-3 text-text-primary w-full transition-all duration-150 placeholder-text-muted;
+  }
+  .card-panel {
+    @apply bg-surface border border-border rounded-16 shadow-card;
+  }
+}
