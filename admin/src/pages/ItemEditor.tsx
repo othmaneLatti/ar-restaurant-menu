@@ -71,7 +71,9 @@ export default function ItemEditor() {
   const saveMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const config = {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': undefined
+        },
         onUploadProgress: (progressEvent: any) => {
           if (progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -80,9 +82,9 @@ export default function ItemEditor() {
         }
       };
       if (isEditing) {
-        return api.put(`/menu/items/${id}`, data, config);
+        return api.putForm(`/menu/items/${id}`, data, config);
       } else {
-        return api.post('/menu/items', data, config);
+        return api.postForm('/menu/items', data, config);
       }
     },
     onSuccess: () => {
