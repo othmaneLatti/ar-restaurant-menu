@@ -122,8 +122,8 @@ export default function ItemEditor() {
     const ingList = formData.ingredients.split(',').map(s => s.trim()).filter(Boolean);
     const allList = formData.allergens.split(',').map(s => s.trim()).filter(Boolean);
     
-    ingList.forEach(ing => payload.append('ingredients[]', ing));
-    allList.forEach(all => payload.append('allergens[]', all));
+    payload.append('ingredients', JSON.stringify(ingList));
+    payload.append('allergens', JSON.stringify(allList));
     
     payload.append('is_available', String(formData.is_available));
 

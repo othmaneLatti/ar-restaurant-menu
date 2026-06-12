@@ -81,6 +81,17 @@ router.delete('/categories/:id', authenticate, async (req, res) => {
   }
 });
 
+// Parse stringified arrays from FormData
+const parseArrayFields = (req: any, res: any, next: any) => {
+  if (req.body.ingredients && typeof req.body.ingredients === 'string') {
+    try { req.body.ingredients = JSON.parse(req.body.ingredients); } catch (e) {}
+  }
+  if (req.body.allergens && typeof req.body.allergens === 'string') {
+    try { req.body.allergens = JSON.parse(req.body.allergens); } catch (e) {}
+  }
+  next();
+};
+
 // Items endpoints
 const itemSchema = z.object({
   body: z.object({
@@ -89,15 +100,15 @@ const itemSchema = z.object({
     description: z.string().min(1),
     price: z.string().refine(val => !isNaN(parseFloat(val)), { message: "Price must be a number" }),
     calories: z.string().optional().refine(val => !val || !isNaN(parseInt(val, 10)), { message: "Calories must be a number" }),
-    ingredients: z.string().optional(),
-    allergens: z.string().optional(),
+    ingredients: z.array(z.string()).optional(),
+    allergens: z.array(z.string()).optional(),
   }),
 });
 
 router.post('/items', authenticate, uploadItemFiles.fields([
   { name: 'thumbnail', maxCount: 1 },
   { name: 'model', maxCount: 1 }
-]), validate(itemSchema), async (req, res) => {
+]), parseArrayFields, validate(itemSchema), async (req, res) => {
   try {
     const { category_id, name, description, price, calories, ingredients, allergens } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -113,8 +124,8 @@ router.post('/items', authenticate, uploadItemFiles.fields([
         description,
         price: parseFloat(price),
         calories: calories ? parseInt(calories, 10) : null,
-        ingredients: ingredients ? (typeof ingredients === 'string' ? ingredients : JSON.stringify(ingredients)) : '[]',
-        allergens: allergens ? (typeof allergens === 'string' ? allergens : JSON.stringify(allergens)) : '[]',
+        ingredients: ingredients ? JSON.stringify(ingredients) : '[]',
+        allergens: allergens ? JSON.stringify(allergens) : '[]',
         thumbnail_url: files.thumbnail[0].path,
         model_url: files.model ? files.model[0].path : null,
       },
@@ -134,15 +145,15 @@ const itemUpdateSchema = z.object({
     description: z.string().min(1).optional(),
     price: z.string().optional().refine(val => !val || !isNaN(parseFloat(val)), { message: "Price must be a number" }),
     calories: z.string().optional().refine(val => !val || !isNaN(parseInt(val, 10)), { message: "Calories must be a number" }),
-    ingredients: z.string().optional(),
-    allergens: z.string().optional(),
+    ingredients: z.array(z.string()).optional(),
+    allergens: z.array(z.string()).optional(),
   }),
 });
 
 router.put('/items/:id', authenticate, uploadItemFiles.fields([
   { name: 'thumbnail', maxCount: 1 },
   { name: 'model', maxCount: 1 }
-]), validate(itemUpdateSchema), async (req, res) => {
+]), parseArrayFields, validate(itemUpdateSchema), async (req, res) => {
   try {
     const { category_id, name, description, price, calories, ingredients, allergens } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -153,8 +164,8 @@ router.put('/items/:id', authenticate, uploadItemFiles.fields([
       description,
       price: price ? parseFloat(price) : undefined,
       calories: calories ? parseInt(calories, 10) : undefined,
-      ingredients: ingredients ? (typeof ingredients === 'string' ? ingredients : JSON.stringify(ingredients)) : undefined,
-      allergens: allergens ? (typeof allergens === 'string' ? allergens : JSON.stringify(allergens)) : undefined,
+      ingredients: ingredients ? JSON.stringify(ingredients) : undefined,
+      allergens: allergens ? JSON.stringify(allergens) : undefined,
     };
 
     if (files?.thumbnail) {
