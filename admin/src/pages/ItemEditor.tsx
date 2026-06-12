@@ -80,9 +80,9 @@ export default function ItemEditor() {
         }
       };
       if (isEditing) {
-        return api.put(`/menu/item/${id}`, data, config);
+        return api.put(`/menu/items/${id}`, data, config);
       } else {
-        return api.post('/menu/item', data, config);
+        return api.post('/menu/items', data, config);
       }
     },
     onSuccess: () => {

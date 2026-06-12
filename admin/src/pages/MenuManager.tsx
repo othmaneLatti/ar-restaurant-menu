@@ -22,7 +22,7 @@ export default function MenuManager() {
   });
 
   const deleteItem = useMutation({
-    mutationFn: (id: string) => api.delete(`/menu/item/${id}`),
+    mutationFn: (id: string) => api.delete(`/menu/items/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu', admin?.restaurant_id] });
     },
