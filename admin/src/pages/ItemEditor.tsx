@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Plus } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { Button, Input, Card } from '../components/ui';
@@ -28,11 +28,24 @@ export default function ItemEditor() {
   const [model, setModel] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
 
   const { data: menuData } = useQuery({
     queryKey: ['menu', admin?.restaurant_id],
     queryFn: () => api.get(`/menu/${admin?.restaurant_id}`).then(res => res.data),
     enabled: !!admin?.restaurant_id,
+  });
+
+  const createCategory = useMutation({
+    mutationFn: (name: string) => api.post('/menu/categories', { name, display_order: (menuData?.categories?.length || 0) + 1 }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['menu', admin?.restaurant_id] });
+      setFormData(prev => ({ ...prev, category_id: data.data.id }));
+      setIsCatModalOpen(false);
+      setNewCatName('');
+    },
   });
 
   useEffect(() => {
@@ -133,13 +146,50 @@ export default function ItemEditor() {
         </div>
       </div>
 
+      {/* Category Modal */}
+      {isCatModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-2xl p-6 w-full max-w-md shadow-xl border border-border animate-in fade-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-sora font-bold mb-4">New Category</h2>
+            <Input 
+              label="Category Name" 
+              value={newCatName} 
+              onChange={(e) => setNewCatName(e.target.value)} 
+              placeholder="e.g. Appetizers, Main Course..."
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <Button variant="ghost" onClick={() => setIsCatModalOpen(false)}>Cancel</Button>
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  createCategory.mutate(newCatName);
+                }}
+                disabled={!newCatName.trim() || createCategory.isPending}
+              >
+                {createCategory.isPending ? 'Creating...' : 'Create Category'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && <div className="p-3 bg-error/10 text-error rounded-10 border border-error/20">{error}</div>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-full">
-              <label className="text-sm font-medium text-text-primary block mb-1.5">Category</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-text-primary block">Category</label>
+                <button 
+                  type="button"
+                  onClick={() => setIsCatModalOpen(true)}
+                  className="text-primary text-sm flex items-center gap-1 hover:underline font-medium"
+                >
+                  <Plus size={14} /> New Category
+                </button>
+              </div>
               <select 
                 className="bg-surface border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary rounded-10 px-4 py-3 text-text-primary w-full transition-all duration-150"
                 value={formData.category_id}

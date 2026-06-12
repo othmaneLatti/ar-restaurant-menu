@@ -4,13 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { Button, Card, DataTable } from '../components/ui';
+import { Button, Card, DataTable, Input } from '../components/ui';
+import { cn } from '../utils/cn';
 
 export default function MenuManager() {
   const { admin } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
 
   const { data: menuData, isLoading } = useQuery({
     queryKey: ['menu', admin?.restaurant_id],
@@ -29,6 +32,15 @@ export default function MenuManager() {
     setExpandedCats(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const createCategory = useMutation({
+    mutationFn: (name: string) => api.post('/menu/categories', { name, display_order: categories.length + 1 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu', admin?.restaurant_id] });
+      setIsCatModalOpen(false);
+      setNewCatName('');
+    },
+  });
+
   if (isLoading) {
     return <div className="text-text-muted animate-pulse">Loading menu...</div>;
   }
@@ -43,11 +55,42 @@ export default function MenuManager() {
           <h1 className="text-3xl font-sora font-bold mb-2">Menu Manager</h1>
           <p className="text-text-muted">Manage your categories and interactive items.</p>
         </div>
-        <Button onClick={() => navigate('/menu/new')} className="flex items-center gap-2">
-          <Plus size={18} />
-          Add Item
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button onClick={() => setIsCatModalOpen(true)} variant="ghost" className="flex items-center gap-2">
+            <Plus size={18} />
+            Add Category
+          </Button>
+          <Button onClick={() => navigate('/menu/new')} className="flex items-center gap-2">
+            <Plus size={18} />
+            Add Item
+          </Button>
+        </div>
       </header>
+
+      {/* Category Modal */}
+      {isCatModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-2xl p-6 w-full max-w-md shadow-xl border border-border animate-in fade-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-sora font-bold mb-4">New Category</h2>
+            <Input 
+              label="Category Name" 
+              value={newCatName} 
+              onChange={(e) => setNewCatName(e.target.value)} 
+              placeholder="e.g. Appetizers, Main Course..."
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <Button variant="ghost" onClick={() => setIsCatModalOpen(false)}>Cancel</Button>
+              <Button 
+                onClick={() => createCategory.mutate(newCatName)}
+                disabled={!newCatName.trim() || createCategory.isPending}
+              >
+                {createCategory.isPending ? 'Creating...' : 'Create Category'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {categories.map((cat: any) => {
